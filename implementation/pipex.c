@@ -6,7 +6,7 @@
 /*   By: lmangall <lmangall@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 19:33:22 by lmangall          #+#    #+#             */
-/*   Updated: 2023/02/11 18:16:23 by lmangall         ###   ########.fr       */
+/*   Updated: 2023/02/11 19:07:28 by lmangall         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,12 +24,10 @@
 //           2     3   4     5
 
 // TEST COMMAND:  ./pipex -l -l -f -f -f
-// ./pipex file.txt ls ls file2.txt
+// ./pipex file.txt cat wc file2.txt
 
 // Use the main syscall arguments and split to find the command
 // wait pid -1
-
-
 
 //        #include <sys/types.h>
 //        #include <sys/wait.h>
@@ -37,10 +35,6 @@
 //        pid_t wait(int *wstatus);
 
 //        pid_t waitpid(pid_t pid, int *wstatus, int options);
-
-
-
-
 
 int pipex(int argc, char *argv[])
 {
@@ -50,6 +44,11 @@ int pipex(int argc, char *argv[])
 	int		WRITE_END;//should it be a STATIC INT ?
 	int		fd[2];
 	pid_t	child;
+	// char *cmd1[] = {"cat", NULL, NULL};
+	// char *cmd2[] = {"wc", "-l", NULL};
+	char *cmd2[] = {"ls", NULL, NULL};
+	char *cmd2[] = {"ls", NULL, NULL};
+
 
 	i = 0;
 	j = 0;
@@ -79,26 +78,27 @@ int pipex(int argc, char *argv[])
 	}
 	if(child == 0)//child
 	{
-		dup2(fd [WRITE_END], STDOUT_FILENO);//int dup2(int oldfd, int newfd);
+		// dup2(fd [WRITE_END], STDOUT_FILENO);//int dup2(int oldfd, int newfd);
 		printf("- child here %i\n", child);
-		printf("WRITE_END %i\n", WRITE_END);
 		printf("STDOUT_FILENO %i\n\n", STDOUT_FILENO);
 		perror("Perror output 1: ");
-		execve("/bin/ls", NULL, NULL);
+		// execve("/bin/cat", cmd1, NULL);
+		execve("/bin/ls", cmd1, NULL);
 	}
 	if(child > 0)//parent
 	{
 		// j = open(argv[2], O_RDONLY);
 		// if(j == -1)
 		// 	exit_p(2);
-		dup2(fd [READ_END], STDIN_FILENO);
-		close(fd [WRITE_END]);
+		// dup2(fd [READ_END], STDIN_FILENO);
+		// close(fd [WRITE_END]);
 		wait(NULL);
 		printf("- parent here %i\n", child);
-		printf("READ_END %i\n", READ_END);
 		printf("STDIN_FILENO %i\n", STDIN_FILENO);
 		perror("Perror output 2: ");
-		execve("/bin/ls", NULL, NULL);
+		// execve("/bin/wc", cmd2, NULL);
+		execve("/bin/ls", cmd1, NULL);
+
 	}
 	return (0);
 }

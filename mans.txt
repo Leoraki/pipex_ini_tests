@@ -1,0 +1,2018 @@
+PERROR(3)                                            Linux Programmer's Manual                                           PERROR(3)
+
+NAME
+       perror - print a system error message
+
+SYNOPSIS
+       #include <stdio.h>
+
+       void perror(const char *s);
+
+       #include <errno.h>
+
+       const char * const sys_errlist[];
+       int sys_nerr;
+       int errno;       /* Not really declared this way; see errno(3) */
+
+   Feature Test Macro Requirements for glibc (see feature_test_macros(7)):
+
+       sys_errlist, sys_nerr:
+           From glibc 2.19 to 2.31:
+               _DEFAULT_SOURCE
+           Glibc 2.19 and earlier:
+               _BSD_SOURCE
+
+DESCRIPTION
+       The  perror() function produces a message on standard error describing the last error encountered during a call to a system
+       or library function.
+
+       First (if s is not NULL and *s is not a null byte ('\0')), the argument string s is printed, followed  by  a  colon  and  a
+       blank.  Then an error message corresponding to the current value of errno and a new-line.
+
+       To be of most use, the argument string should include the name of the function that incurred the error.
+
+       The  global  error  list  sys_errlist[], which can be indexed by errno, can be used to obtain the error message without the
+       newline.  The largest message number provided in the table is sys_nerr-1.  Be careful when directly  accessing  this  list,
+       because  new  error  values may not have been added to sys_errlist[].  The use of sys_errlist[] is nowadays deprecated; use
+       strerror(3) instead.
+
+       When a system call fails, it usually returns -1 and sets the variable errno to a value describing what went wrong.   (These
+       values can be found in <errno.h>.)  Many library functions do likewise.  The function perror() serves to translate this er‐
+       ror code into human-readable form.  Note that errno is undefined after a successful system call or library  function  call:
+       this call may well change this variable, even though it succeeds, for example because it internally used some other library
+       function that failed.  Thus, if a failing call is not immediately followed by a call to perror(), the value of errno should
+       be saved.
+
+VERSIONS
+       Since glibc version 2.32, the declarations of sys_errlist and sys_nerr are no longer exposed by <stdio.h>.
+
+ATTRIBUTES
+       For an explanation of the terms used in this section, see attributes(7).
+
+       ┌──────────┬───────────────┬─────────────────────┐
+       │Interface │ Attribute     │ Value               │
+       ├──────────┼───────────────┼─────────────────────┤
+       │perror()  │ Thread safety │ MT-Safe race:stderr │
+       └──────────┴───────────────┴─────────────────────┘
+
+CONFORMING TO
+       perror(), errno: POSIX.1-2001, POSIX.1-2008, C89, C99, 4.3BSD.
+
+       The externals sys_nerr and sys_errlist derive from BSD, but are not specified in POSIX.1.
+
+NOTES
+       The externals sys_nerr and sys_errlist are defined by glibc, but in <stdio.h>.
+
+SEE ALSO
+       err(3), errno(3), error(3), strerror(3)
+
+COLOPHON
+       This  page is part of release 5.10 of the Linux man-pages project.  A description of the project, information about report‐
+       ing bugs, and the latest version of this page, can be found at https://www.kernel.org/doc/man-pages/.
+
+                                                            2020-11-01                                                   PERROR(3)
+STRERROR(3)                                          Linux Programmer's Manual                                         STRERROR(3)
+
+NAME
+       strerror, strerrorname_np, strerrordesc_np, strerror_r, strerror_l - return string describing error number
+
+SYNOPSIS
+       #include <string.h>
+
+       char *strerror(int errnum);
+       const char *strerrorname_np(int errnum);
+       const char *strerrordesc_np(int errnum);
+
+       int strerror_r(int errnum, char *buf, size_t buflen);
+                   /* XSI-compliant */
+
+       char *strerror_r(int errnum, char *buf, size_t buflen);
+                   /* GNU-specific */
+
+       char *strerror_l(int errnum, locale_t locale);
+
+   Feature Test Macro Requirements for glibc (see feature_test_macros(7)):
+
+       strerrorname_np(), strerrordesc_np():
+           _GNU_SOURCE
+       strerror_r():
+           The XSI-compliant version is provided if:
+           (_POSIX_C_SOURCE >= 200112L) && !  _GNU_SOURCE
+           Otherwise, the GNU-specific version is provided.
+
+DESCRIPTION
+       The strerror() function returns a pointer to a string that describes the error code passed in the argument errnum, possibly
+       using the LC_MESSAGES part of the current locale to select the appropriate language.  (For example, if  errnum  is  EINVAL,
+       the returned description will be "Invalid argument".)  This string must not be modified by the application, but may be mod‐
+       ified by a subsequent call to strerror() or strerror_l().  No other library function, including perror(3), will modify this
+       string.
+
+       Like  strerror(),  the strerrordesc_np() function returns a pointer to a string that describes the error code passed in the
+       argument errnum, with the difference that the returned string is not translated according to the current locale.
+
+       The strerrorname_np() function returns a pointer to a string containing the name of the error code passed in  the  argument
+       errnum.  For example, given EPERM as an argument, this function returns a pointer to the string "EPERM".
+
+   strerror_r()
+       The  strerror_r()  function  is  similar to strerror(), but is thread safe.  This function is available in two versions: an
+       XSI-compliant version specified in POSIX.1-2001 (available since glibc 2.3.4, but not POSIX-compliant  until  glibc  2.13),
+       and a GNU-specific version (available since glibc 2.0).  The XSI-compliant version is provided with the feature test macros
+       settings shown in the SYNOPSIS; otherwise the GNU-specific version is provided.  If no feature test macros  are  explicitly
+       defined,  then  (since  glibc  2.4) _POSIX_C_SOURCE is defined by default with the value 200112L, so that the XSI-compliant
+       version of strerror_r() is provided by default.
+
+       The XSI-compliant strerror_r() is preferred for portable applications.  It returns the error string  in  the  user-supplied
+       buffer buf of length buflen.
+
+       The  GNU-specific strerror_r() returns a pointer to a string containing the error message.  This may be either a pointer to
+       a string that the function stores in buf, or a pointer to some (immutable) static string (in which case buf is unused).  If
+       the  function  stores  a  string in buf, then at most buflen bytes are stored (the string may be truncated if buflen is too
+       small and errnum is unknown).  The string always includes a terminating null byte ('\0').
+
+   strerror_l()
+       strerror_l() is like strerror(), but maps errnum to a locale-dependent error message in the  locale  specified  by  locale.
+       The  behavior of strerror_l() is undefined if locale is the special locale object LC_GLOBAL_LOCALE or is not a valid locale
+       object handle.
+
+RETURN VALUE
+       The strerror(), strerror_l(), and the GNU-specific strerror_r() functions return the appropriate error description  string,
+       or an "Unknown error nnn" message if the error number is unknown.
+
+       On  success,  strerrorname_np() and strerrordesc_np() return the appropriate error description string.  If errnum is an in‐
+       valid error number, these functions return NULL.
+
+       The XSI-compliant strerror_r() function returns 0 on success.  On error, a (positive) error number is returned (since glibc
+       2.13), or -1 is returned and errno is set to indicate the error (glibc versions before 2.13).
+
+       POSIX.1-2001 and POSIX.1-2008 require that a successful call to strerror() or strerror_l() shall leave errno unchanged, and
+       note that, since no function return value is reserved to indicate an error, an application that wishes to check for  errors
+       should initialize errno to zero before the call, and then check errno after the call.
+
+ERRORS
+       EINVAL The value of errnum is not a valid error number.
+
+       ERANGE Insufficient storage was supplied to contain the error description string.
+
+VERSIONS
+       The strerror_l() function first appeared in glibc 2.6.
+
+ATTRIBUTES
+       For an explanation of the terms used in this section, see attributes(7).
+
+       ┌───────────────────┬───────────────┬─────────────────────────┐
+       │Interface          │ Attribute     │ Value                   │
+       ├───────────────────┼───────────────┼─────────────────────────┤
+       │strerror()         │ Thread safety │ MT-Unsafe race:strerror │
+       ├───────────────────┼───────────────┼─────────────────────────┤
+       │strerrorname_np(), │ Thread safety │ MT-Safe                 │
+       │strerrordesc_np()  │               │                         │
+       ├───────────────────┼───────────────┼─────────────────────────┤
+       │strerror_r(),      │ Thread safety │ MT-Safe                 │
+       │strerror_l()       │               │                         │
+       └───────────────────┴───────────────┴─────────────────────────┘
+CONFORMING TO
+       strerror() is specified by POSIX.1-2001, POSIX.1-2008, C89,  and  C99.   strerror_r()  is  specified  by  POSIX.1-2001  and
+       POSIX.1-2008.
+
+       strerror_l() is specified in POSIX.1-2008.
+
+       The GNU-specific functions strerror_r(), strerrorname_np(), and strerrordesc_np() are nonstandard extensions.
+
+       POSIX.1-2001 permits strerror() to set errno if the call encounters an error, but does not specify what value should be re‐
+       turned as the function result in the event of an error.  On some systems, strerror() returns NULL if the  error  number  is
+       unknown.  On other systems, strerror() returns a string something like "Error nnn occurred" and sets errno to EINVAL if the
+       error number is unknown.  C99 and POSIX.1-2008 require the return value to be non-NULL.
+
+NOTES
+       The GNU C Library uses a buffer of 1024 characters for strerror().  This buffer size  therefore  should  be  sufficient  to
+       avoid an ERANGE error when calling strerror_r().
+
+       strerrorname_np() and strerrordesc_np() are thread-safe and async-signal-safe.
+
+SEE ALSO
+       err(3), errno(3), error(3), perror(3), strsignal(3), locale(7)
+
+COLOPHON
+       This  page is part of release 5.10 of the Linux man-pages project.  A description of the project, information about report‐
+       ing bugs, and the latest version of this page, can be found at https://www.kernel.org/doc/man-pages/.
+
+                                                            2020-11-01                                                 STRERROR(3)
+ACCESS(2)                                            Linux Programmer's Manual                                           ACCESS(2)
+
+NAME
+       access, faccessat, faccessat2 - check user's permissions for a file
+
+SYNOPSIS
+       #include <unistd.h>
+
+       int access(const char *pathname, int mode);
+
+       #include <fcntl.h>           /* Definition of AT_* constants */
+       #include <unistd.h>
+
+       int faccessat(int dirfd, const char *pathname, int mode, int flags);
+                       /* But see C library/kernel differences, below */
+
+       int faccessat2(int dirfd, const char *pathname, int mode, int flags);
+
+   Feature Test Macro Requirements for glibc (see feature_test_macros(7)):
+
+       faccessat():
+           Since glibc 2.10:
+               _POSIX_C_SOURCE >= 200809L
+           Before glibc 2.10:
+               _ATFILE_SOURCE
+
+DESCRIPTION
+       access()  checks  whether the calling process can access the file pathname.  If pathname is a symbolic link, it is derefer‐
+       enced.
+
+       The mode specifies the accessibility check(s) to be performed, and is either the value F_OK, or a mask  consisting  of  the
+       bitwise  OR  of  one or more of R_OK, W_OK, and X_OK.  F_OK tests for the existence of the file.  R_OK, W_OK, and X_OK test
+       whether the file exists and grants read, write, and execute permissions, respectively.
+
+       The check is done using the calling process's real UID and GID, rather than the effective IDs as is done when actually  at‐
+       tempting an operation (e.g., open(2)) on the file.  Similarly, for the root user, the check uses the set of permitted capa‐
+       bilities rather than the set of effective capabilities; and for non-root users, the check uses an empty  set  of  capabili‐
+       ties.
+
+       This  allows  set-user-ID  programs  and capability-endowed programs to easily determine the invoking user's authority.  In
+       other words, access() does not answer the "can I read/write/execute this file?" question.  It answers a slightly  different
+       question: "(assuming I'm a setuid binary) can the user who invoked me read/write/execute this file?", which gives set-user-
+       ID programs the possibility to prevent malicious users from causing them to read files which users  shouldn't  be  able  to
+       read.
+
+       If  the  calling process is privileged (i.e., its real UID is zero), then an X_OK check is successful for a regular file if
+       execute permission is enabled for any of the file owner, group, or other.
+
+   faccessat()
+       faccessat() operates in exactly the same way as access(), except for the differences described here.
+
+       If the pathname given in pathname is relative, then it is interpreted relative to the directory referred to by the file de‐
+       scriptor  dirfd (rather than relative to the current working directory of the calling process, as is done by access() for a
+       relative pathname).
+
+       If pathname is relative and dirfd is the special value AT_FDCWD, then pathname is interpreted relative to the current work‐
+       ing directory of the calling process (like access()).
+
+       If pathname is absolute, then dirfd is ignored.
+
+       flags is constructed by ORing together zero or more of the following values:
+
+       AT_EACCESS
+              Perform  access  checks using the effective user and group IDs.  By default, faccessat() uses the real IDs (like ac‐
+              cess()).
+
+       AT_SYMLINK_NOFOLLOW
+              If pathname is a symbolic link, do not dereference it: instead return information about the link itself.
+
+       See openat(2) for an explanation of the need for faccessat().
+
+   faccessat2()
+       The description of faccessat() given above corresponds to POSIX.1 and to the implementation provided  by  glibc.   However,
+       the  glibc  implementation  was an imperfect emulation (see BUGS) that papered over the fact that the raw Linux faccessat()
+       system call does not have a flags argument.  To allow for a proper implementation, Linux 5.8 added the faccessat2()  system
+       call, which supports the flags argument and allows a correct implementation of the faccessat() wrapper function.
+
+RETURN VALUE
+       On  success (all requested permissions granted, or mode is F_OK and the file exists), zero is returned.  On error (at least
+       one bit in mode asked for a permission that is denied, or mode is F_OK and the file does not exist, or some other error oc‐
+       curred), -1 is returned, and errno is set appropriately.
+
+ERRORS
+       access() and faccessat() shall fail if:
+
+       EACCES The  requested  access would be denied to the file, or search permission is denied for one of the directories in the
+              path prefix of pathname.  (See also path_resolution(7).)
+
+       ELOOP  Too many symbolic links were encountered in resolving pathname.
+
+       ENAMETOOLONG
+              pathname is too long.
+
+       ENOENT A component of pathname does not exist or is a dangling symbolic link.
+
+       ENOTDIR
+              A component used as a directory in pathname is not, in fact, a directory.
+
+       EROFS  Write permission was requested for a file on a read-only filesystem.
+
+       access() and faccessat() may fail if:
+
+       EFAULT pathname points outside your accessible address space.
+
+       EINVAL mode was incorrectly specified.
+
+       EIO    An I/O error occurred.
+
+       ENOMEM Insufficient kernel memory was available.
+
+       ETXTBSY
+              Write access was requested to an executable which is being executed.
+
+       The following additional errors can occur for faccessat():
+
+       EBADF  dirfd is not a valid file descriptor.
+
+       EINVAL Invalid flag specified in flags.
+
+       ENOTDIR
+              pathname is relative and dirfd is a file descriptor referring to a file other than a directory.
+
+VERSIONS
+       faccessat() was added to Linux in kernel 2.6.16; library support was added to glibc in version 2.4.
+
+       faccessat2() was added to Linux in version 5.8.
+
+CONFORMING TO
+       access(): SVr4, 4.3BSD, POSIX.1-2001, POSIX.1-2008.
+
+       faccessat(): POSIX.1-2008.
+
+       faccessat2(): Linux-specific.
+
+NOTES
+       Warning: Using these calls to check if a user is authorized to, for example, open a file before  actually  doing  so  using
+       open(2)  creates  a  security hole, because the user might exploit the short time interval between checking and opening the
+       file to manipulate it.  For this reason, the use of this system call should be avoided.  (In the example just described,  a
+       safer alternative would be to temporarily switch the process's effective user ID to the real ID and then call open(2).)
+
+       access() always dereferences symbolic links.  If you need to check the permissions on a symbolic link, use faccessat() with
+       the flag AT_SYMLINK_NOFOLLOW.
+
+       These calls return an error if any of the access types in mode is denied, even if some of the other access  types  in  mode
+       are permitted.
+
+       If  the calling process has appropriate privileges (i.e., is superuser), POSIX.1-2001 permits an implementation to indicate
+       success for an X_OK check even if none of the execute file permission bits are set.  Linux does not do this.
+
+       A file is accessible only if the permissions on each of the directories in the path prefix of pathname grant search  (i.e.,
+       execute) access.  If any directory is inaccessible, then the access() call fails, regardless of the permissions on the file
+       itself.
+
+       Only access bits are checked, not the file type or contents.  Therefore, if a directory is found to be writable, it  proba‐
+       bly  means  that  files can be created in the directory, and not that the directory can be written as a file.  Similarly, a
+       DOS file may be found to be "executable," but the execve(2) call will still fail.
+
+       These calls may not work correctly on NFSv2 filesystems with UID mapping enabled, because UID mapping is done on the server
+       and  hidden from the client, which checks permissions.  (NFS versions 3 and higher perform the check on the server.)  Simi‐
+       lar problems can occur to FUSE mounts.
+
+   C library/kernel differences
+       The raw faccessat() system call takes only the first three arguments.  The AT_EACCESS and AT_SYMLINK_NOFOLLOW flags are ac‐
+       tually  implemented  within  the  glibc  wrapper function for faccessat().  If either of these flags is specified, then the
+       wrapper function employs fstatat(2) to determine access permissions, but see BUGS.
+
+   Glibc notes
+       On older kernels where faccessat() is unavailable (and when the AT_EACCESS and AT_SYMLINK_NOFOLLOW  flags  are  not  speci‐
+       fied),  the  glibc  wrapper  function  falls back to the use of access().  When pathname is a relative pathname, glibc con‐
+       structs a pathname based on the symbolic link in /proc/self/fd that corresponds to the dirfd argument.
+
+BUGS
+       Because the Linux kernel's faccessat() system call does not support a flags argument, the glibc faccessat()  wrapper  func‐
+       tion  provided  in glibc 2.32 and earlier emulates the required functionality using a combination of the faccessat() system
+       call and fstatat(2).  However, this emulation does not take ACLs into account.  Starting with glibc 2.33, the wrapper func‐
+       tion avoids this bug by making use of the faccessat2() system call where it is provided by the underlying kernel.
+
+       In  kernel  2.4  (and earlier) there is some strangeness in the handling of X_OK tests for superuser.  If all categories of
+       execute permission are disabled for a nondirectory file, then the only access() test that returns -1 is when mode is speci‐
+       fied  as  just  X_OK; if R_OK or W_OK is also specified in mode, then access() returns 0 for such files.  Early 2.6 kernels
+       (up to and including 2.6.3) also behaved in the same way as kernel 2.4.
+
+       In kernels before 2.6.20, these calls ignored the effect of the MS_NOEXEC flag if it was used to  mount(2)  the  underlying
+       filesystem.  Since kernel 2.6.20, the MS_NOEXEC flag is honored.
+
+SEE ALSO
+       chmod(2), chown(2), open(2), setgid(2), setuid(2), stat(2), euidaccess(3), credentials(7), path_resolution(7), symlink(7)
+
+COLOPHON
+       This  page is part of release 5.10 of the Linux man-pages project.  A description of the project, information about report‐
+       ing bugs, and the latest version of this page, can be found at https://www.kernel.org/doc/man-pages/.
+
+Linux                                                       2020-12-21                                                   ACCESS(2)
+DUP(2)                                               Linux Programmer's Manual                                              DUP(2)
+
+NAME
+       dup, dup2, dup3 - duplicate a file descriptor
+
+SYNOPSIS
+       #include <unistd.h>
+
+       int dup(int oldfd);
+       int dup2(int oldfd, int newfd);
+
+       #define _GNU_SOURCE             /* See feature_test_macros(7) */
+       #include <fcntl.h>              /* Obtain O_* constant definitions */
+       #include <unistd.h>
+
+       int dup3(int oldfd, int newfd, int flags);
+
+DESCRIPTION
+       The dup() system call creates a copy of the file descriptor oldfd, using the lowest-numbered unused file descriptor for the
+       new descriptor.
+
+       After a successful return, the old and new file descriptors may be used interchangeably.  They refer to the same open  file
+       description  (see open(2)) and thus share file offset and file status flags; for example, if the file offset is modified by
+       using lseek(2) on one of the file descriptors, the offset is also changed for the other.
+
+       The two file descriptors do not share file descriptor flags (the close-on-exec flag).  The close-on-exec flag  (FD_CLOEXEC;
+       see fcntl(2)) for the duplicate descriptor is off.
+
+   dup2()
+       The dup2() system call performs the same task as dup(), but instead of using the lowest-numbered unused file descriptor, it
+       uses the file descriptor number specified in newfd.  If the file descriptor newfd  was  previously  open,  it  is  silently
+       closed before being reused.
+
+       The  steps of closing and reusing the file descriptor newfd are performed atomically.  This is important, because trying to
+       implement equivalent functionality using close(2) and dup() would be subject to race conditions,  whereby  newfd  might  be
+       reused between the two steps.  Such reuse could happen because the main program is interrupted by a signal handler that al‐
+       locates a file descriptor, or because a parallel thread allocates a file descriptor.
+
+       Note the following points:
+
+       *  If oldfd is not a valid file descriptor, then the call fails, and newfd is not closed.
+
+       *  If oldfd is a valid file descriptor, and newfd has the same value as oldfd, then dup2() does nothing, and returns newfd.
+
+   dup3()
+       dup3() is the same as dup2(), except that:
+
+       *  The caller can force the close-on-exec flag to be set for the new file descriptor by specifying O_CLOEXEC in flags.  See
+          the description of the same flag in open(2) for reasons why this may be useful.
+
+       *  If oldfd equals newfd, then dup3() fails with the error EINVAL.
+
+RETURN VALUE
+       On success, these system calls return the new file descriptor.  On error, -1 is returned, and errno is set appropriately.
+
+ERRORS
+       EBADF  oldfd isn't an open file descriptor.
+
+       EBADF  newfd is out of the allowed range for file descriptors (see the discussion of RLIMIT_NOFILE in getrlimit(2)).
+
+       EBUSY  (Linux only) This may be returned by dup2() or dup3() during a race condition with open(2) and dup().
+
+       EINTR  The dup2() or dup3() call was interrupted by a signal; see signal(7).
+
+       EINVAL (dup3()) flags contain an invalid value.
+
+       EINVAL (dup3()) oldfd was equal to newfd.
+
+       EMFILE The  per-process  limit on the number of open file descriptors has been reached (see the discussion of RLIMIT_NOFILE
+              in getrlimit(2)).
+
+VERSIONS
+       dup3() was added to Linux in version 2.6.27; glibc support is available starting with version 2.9.
+
+CONFORMING TO
+       dup(), dup2(): POSIX.1-2001, POSIX.1-2008, SVr4, 4.3BSD.
+
+       dup3() is Linux-specific.
+
+NOTES
+       The error returned by dup2() is different from that returned by fcntl(..., F_DUPFD, ...)  when newfd is out of  range.   On
+       some systems, dup2() also sometimes returns EINVAL like F_DUPFD.
+
+       If  newfd was open, any errors that would have been reported at close(2) time are lost.  If this is of concern, then—unless
+       the program is single-threaded and does not allocate file descriptors in signal handlers—the correct  approach  is  not  to
+       close newfd before calling dup2(), because of the race condition described above.  Instead, code something like the follow‐
+       ing could be used:
+
+           /* Obtain a duplicate of 'newfd' that can subsequently
+              be used to check for close() errors; an EBADF error
+              means that 'newfd' was not open. */
+
+           tmpfd = dup(newfd);
+           if (tmpfd == -1 && errno != EBADF) {
+               /* Handle unexpected dup() error */
+           }
+
+           /* Atomically duplicate 'oldfd' on 'newfd' */
+
+           if (dup2(oldfd, newfd) == -1) {
+               /* Handle dup2() error */
+           }
+
+           /* Now check for close() errors on the file originally
+              referred to by 'newfd' */
+
+           if (tmpfd != -1) {
+               if (close(tmpfd) == -1) {
+                   /* Handle errors from close */
+               }
+           }
+
+SEE ALSO
+       close(2), fcntl(2), open(2), pidfd_getfd(2)
+
+COLOPHON
+       This page is part of release 5.10 of the Linux man-pages project.  A description of the project, information about  report‐
+       ing bugs, and the latest version of this page, can be found at https://www.kernel.org/doc/man-pages/.
+
+Linux                                                       2020-11-01                                                      DUP(2)
+DUP(2)                                               Linux Programmer's Manual                                              DUP(2)
+
+NAME
+       dup, dup2, dup3 - duplicate a file descriptor
+
+SYNOPSIS
+       #include <unistd.h>
+
+       int dup(int oldfd);
+       int dup2(int oldfd, int newfd);
+
+       #define _GNU_SOURCE             /* See feature_test_macros(7) */
+       #include <fcntl.h>              /* Obtain O_* constant definitions */
+       #include <unistd.h>
+
+       int dup3(int oldfd, int newfd, int flags);
+
+DESCRIPTION
+       The dup() system call creates a copy of the file descriptor oldfd, using the lowest-numbered unused file descriptor for the
+       new descriptor.
+
+       After a successful return, the old and new file descriptors may be used interchangeably.  They refer to the same open  file
+       description  (see open(2)) and thus share file offset and file status flags; for example, if the file offset is modified by
+       using lseek(2) on one of the file descriptors, the offset is also changed for the other.
+
+       The two file descriptors do not share file descriptor flags (the close-on-exec flag).  The close-on-exec flag  (FD_CLOEXEC;
+       see fcntl(2)) for the duplicate descriptor is off.
+
+   dup2()
+       The dup2() system call performs the same task as dup(), but instead of using the lowest-numbered unused file descriptor, it
+       uses the file descriptor number specified in newfd.  If the file descriptor newfd  was  previously  open,  it  is  silently
+       closed before being reused.
+
+       The  steps of closing and reusing the file descriptor newfd are performed atomically.  This is important, because trying to
+       implement equivalent functionality using close(2) and dup() would be subject to race conditions,  whereby  newfd  might  be
+       reused between the two steps.  Such reuse could happen because the main program is interrupted by a signal handler that al‐
+       locates a file descriptor, or because a parallel thread allocates a file descriptor.
+
+       Note the following points:
+
+       *  If oldfd is not a valid file descriptor, then the call fails, and newfd is not closed.
+
+       *  If oldfd is a valid file descriptor, and newfd has the same value as oldfd, then dup2() does nothing, and returns newfd.
+
+   dup3()
+       dup3() is the same as dup2(), except that:
+
+       *  The caller can force the close-on-exec flag to be set for the new file descriptor by specifying O_CLOEXEC in flags.  See
+          the description of the same flag in open(2) for reasons why this may be useful.
+
+       *  If oldfd equals newfd, then dup3() fails with the error EINVAL.
+
+RETURN VALUE
+       On success, these system calls return the new file descriptor.  On error, -1 is returned, and errno is set appropriately.
+
+ERRORS
+       EBADF  oldfd isn't an open file descriptor.
+
+       EBADF  newfd is out of the allowed range for file descriptors (see the discussion of RLIMIT_NOFILE in getrlimit(2)).
+
+       EBUSY  (Linux only) This may be returned by dup2() or dup3() during a race condition with open(2) and dup().
+
+       EINTR  The dup2() or dup3() call was interrupted by a signal; see signal(7).
+
+       EINVAL (dup3()) flags contain an invalid value.
+
+       EINVAL (dup3()) oldfd was equal to newfd.
+
+       EMFILE The  per-process  limit on the number of open file descriptors has been reached (see the discussion of RLIMIT_NOFILE
+              in getrlimit(2)).
+
+VERSIONS
+       dup3() was added to Linux in version 2.6.27; glibc support is available starting with version 2.9.
+
+CONFORMING TO
+       dup(), dup2(): POSIX.1-2001, POSIX.1-2008, SVr4, 4.3BSD.
+
+       dup3() is Linux-specific.
+
+NOTES
+       The error returned by dup2() is different from that returned by fcntl(..., F_DUPFD, ...)  when newfd is out of  range.   On
+       some systems, dup2() also sometimes returns EINVAL like F_DUPFD.
+
+       If  newfd was open, any errors that would have been reported at close(2) time are lost.  If this is of concern, then—unless
+       the program is single-threaded and does not allocate file descriptors in signal handlers—the correct  approach  is  not  to
+       close newfd before calling dup2(), because of the race condition described above.  Instead, code something like the follow‐
+       ing could be used:
+
+           /* Obtain a duplicate of 'newfd' that can subsequently
+              be used to check for close() errors; an EBADF error
+              means that 'newfd' was not open. */
+
+           tmpfd = dup(newfd);
+           if (tmpfd == -1 && errno != EBADF) {
+               /* Handle unexpected dup() error */
+           }
+
+           /* Atomically duplicate 'oldfd' on 'newfd' */
+
+           if (dup2(oldfd, newfd) == -1) {
+               /* Handle dup2() error */
+           }
+
+           /* Now check for close() errors on the file originally
+              referred to by 'newfd' */
+
+           if (tmpfd != -1) {
+               if (close(tmpfd) == -1) {
+                   /* Handle errors from close */
+               }
+           }
+
+SEE ALSO
+       close(2), fcntl(2), open(2), pidfd_getfd(2)
+
+COLOPHON
+       This page is part of release 5.10 of the Linux man-pages project.  A description of the project, information about  report‐
+       ing bugs, and the latest version of this page, can be found at https://www.kernel.org/doc/man-pages/.
+
+Linux                                                       2020-11-01                                                      DUP(2)
+EXECVE(2)                                            Linux Programmer's Manual                                           EXECVE(2)
+
+NAME
+       execve - execute program
+
+SYNOPSIS
+       #include <unistd.h>
+
+       int execve(const char *pathname, char *const argv[],
+                  char *const envp[]);
+
+DESCRIPTION
+       execve()  executes the program referred to by pathname.  This causes the program that is currently being run by the calling
+       process to be replaced with a new program, with newly initialized stack, heap, and  (initialized  and  uninitialized)  data
+       segments.
+
+       pathname must be either a binary executable, or a script starting with a line of the form:
+
+           #!interpreter [optional-arg]
+
+       For details of the latter case, see "Interpreter scripts" below.
+
+       argv  is an array of pointers to strings passed to the new program as its command-line arguments.  By convention, the first
+       of these strings (i.e., argv[0]) should contain the filename associated with the file being executed.  The argv array  must
+       be terminated by a NULL pointer.  (Thus, in the new program, argv[argc] will be NULL.)
+
+       envp  is  an array of pointers to strings, conventionally of the form key=value, which are passed as the environment of the
+       new program.  The envp array must be terminated by a NULL pointer.
+
+       The argument vector and environment can be accessed by the new program's main function, when it is defined as:
+
+           int main(int argc, char *argv[], char *envp[])
+
+       Note, however, that the use of a third argument to the main function is not specified in POSIX.1; according to POSIX.1, the
+       environment should be accessed via the external variable environ(7).
+
+       execve()  does  not  return  on success, and the text, initialized data, uninitialized data (bss), and stack of the calling
+       process are overwritten according to the contents of the newly loaded program.
+
+       If the current program is being ptraced, a SIGTRAP signal is sent to it after a successful execve().
+
+       If the set-user-ID bit is set on the program file referred to by pathname, then  the  effective  user  ID  of  the  calling
+       process  is  changed  to  that  of the owner of the program file.  Similarly, if the set-group-ID bit is set on the program
+       file, then the effective group ID of the calling process is set to the group of the program file.
+
+       The aforementioned transformations of the effective IDs are not performed (i.e., the set-user-ID and set-group-ID bits  are
+       ignored) if any of the following is true:
+
+       *  the no_new_privs attribute is set for the calling thread (see prctl(2));
+
+       *  the underlying filesystem is mounted nosuid (the MS_NOSUID flag for mount(2)); or
+
+       *  the calling process is being ptraced.
+
+       The capabilities of the program file (see capabilities(7)) are also ignored if any of the above are true.
+
+       The effective user ID of the process is copied to the saved set-user-ID; similarly, the effective group ID is copied to the
+       saved set-group-ID.  This copying takes place after any effective ID changes that occur because of the set-user-ID and set-
+       group-ID mode bits.
+
+       The process's real UID and real GID, as well its supplementary group IDs, are unchanged by a call to execve().
+
+       If  the  executable  is  an  a.out  dynamically linked binary executable containing shared-library stubs, the Linux dynamic
+       linker ld.so(8) is called at the start of execution to bring needed shared objects into memory and link the executable with
+       them.
+
+       If  the  executable  is a dynamically linked ELF executable, the interpreter named in the PT_INTERP segment is used to load
+       the needed shared objects.   This  interpreter  is  typically  /lib/ld-linux.so.2  for  binaries  linked  with  glibc  (see
+       ld-linux.so(8)).
+
+   Effect on process attributes
+       All process attributes are preserved during an execve(), except the following:
+
+       *  The dispositions of any signals that are being caught are reset to the default (signal(7)).
+
+       *  Any alternate signal stack is not preserved (sigaltstack(2)).
+
+       *  Memory mappings are not preserved (mmap(2)).
+
+       *  Attached System V shared memory segments are detached (shmat(2)).
+
+       *  POSIX shared memory regions are unmapped (shm_open(3)).
+
+       *  Open POSIX message queue descriptors are closed (mq_overview(7)).
+
+       *  Any open POSIX named semaphores are closed (sem_overview(7)).
+
+       *  POSIX timers are not preserved (timer_create(2)).
+
+       *  Any open directory streams are closed (opendir(3)).
+
+       *  Memory locks are not preserved (mlock(2), mlockall(2)).
+
+       *  Exit handlers are not preserved (atexit(3), on_exit(3)).
+
+       *  The floating-point environment is reset to the default (see fenv(3)).
+
+       The process attributes in the preceding list are all specified in POSIX.1.  The following Linux-specific process attributes
+       are also not preserved during an execve():
+
+       *  The process's "dumpable" attribute is set to the value 1, unless a set-user-ID program, a  set-group-ID  program,  or  a
+          program  with  capabilities  is  being  executed,  in  which case the dumpable flag may instead be reset to the value in
+          /proc/sys/fs/suid_dumpable, in the circumstances described under PR_SET_DUMPABLE in prctl(2).  Note that changes to  the
+          "dumpable"  attribute may cause ownership of files in the process's /proc/[pid] directory to change to root:root, as de‐
+          scribed in proc(5).
+
+       *  The prctl(2) PR_SET_KEEPCAPS flag is cleared.
+
+       *  (Since Linux 2.4.36 / 2.6.23) If a set-user-ID or set-group-ID program is being executed, then the parent  death  signal
+          set by prctl(2) PR_SET_PDEATHSIG flag is cleared.
+
+       *  The  process  name,  as  set by prctl(2) PR_SET_NAME (and displayed by ps -o comm), is reset to the name of the new exe‐
+          cutable file.
+
+       *  The SECBIT_KEEP_CAPS securebits flag is cleared.  See capabilities(7).
+
+       *  The termination signal is reset to SIGCHLD (see clone(2)).
+
+       *  The file descriptor table is unshared, undoing the effect of the CLONE_FILES flag of clone(2).
+
+       Note the following further points:
+
+       *  All threads other than the calling thread are destroyed during an execve().  Mutexes,  condition  variables,  and  other
+          pthreads objects are not preserved.
+
+       *  The equivalent of setlocale(LC_ALL, "C") is executed at program start-up.
+
+       *  POSIX.1  specifies  that  the  dispositions  of  any  signals that are ignored or set to the default are left unchanged.
+          POSIX.1 specifies one exception: if SIGCHLD is being ignored, then an implementation may leave the disposition unchanged
+          or reset it to the default; Linux does the former.
+
+       *  Any outstanding asynchronous I/O operations are canceled (aio_read(3), aio_write(3)).
+
+       *  For the handling of capabilities during execve(), see capabilities(7).
+
+       *  By default, file descriptors remain open across an execve().  File descriptors that are marked close-on-exec are closed;
+          see the description of FD_CLOEXEC in fcntl(2).  (If a file descriptor is closed, this will  cause  the  release  of  all
+          record locks obtained on the underlying file by this process.  See fcntl(2) for details.)  POSIX.1 says that if file de‐
+          scriptors 0, 1, and 2 would otherwise be closed after a successful execve(), and the process would  gain  privilege  be‐
+          cause  the  set-user-ID  or  set-group-ID mode bit was set on the executed file, then the system may open an unspecified
+          file for each of these file descriptors.  As a general principle, no portable program, whether privileged  or  not,  can
+          assume that these three file descriptors will remain closed across an execve().
+
+   Interpreter scripts
+       An interpreter script is a text file that has execute permission enabled and whose first line is of the form:
+
+           #!interpreter [optional-arg]
+
+       The interpreter must be a valid pathname for an executable file.
+
+       If  the  pathname argument of execve() specifies an interpreter script, then interpreter will be invoked with the following
+       arguments:
+
+           interpreter [optional-arg] pathname arg...
+
+       where pathname is the absolute pathname of the file specified as the first argument of execve(), and arg...  is the  series
+       of  words  pointed  to by the argv argument of execve(), starting at argv[1].  Note that there is no way to get the argv[0]
+       that was passed to the execve() call.
+
+       For portable use, optional-arg should either be absent, or be specified as a single word (i.e., it should not contain white
+       space); see NOTES below.
+
+       Since Linux 2.6.28, the kernel permits the interpreter of a script to itself be a script.  This permission is recursive, up
+       to a limit of four recursions, so that the interpreter may be a script which is interpreted by a script, and so on.
+
+   Limits on size of arguments and environment
+       Most UNIX implementations impose some limit on the total size of the command-line argument (argv)  and  environment  (envp)
+       strings  that  may  be passed to a new program.  POSIX.1 allows an implementation to advertise this limit using the ARG_MAX
+       constant (either defined in <limits.h> or available at run time using the call sysconf(_SC_ARG_MAX)).
+
+       On Linux prior to kernel 2.6.23, the memory used to store the environment and argument strings was limited to 32 pages (de‐
+       fined by the kernel constant MAX_ARG_PAGES).  On architectures with a 4-kB page size, this yields a maximum size of 128 kB.
+
+       On  kernel 2.6.23 and later, most architectures support a size limit derived from the soft RLIMIT_STACK resource limit (see
+       getrlimit(2)) that is in force at the time of the execve() call.  (Architectures with no memory  management  unit  are  ex‐
+       cepted:  they  maintain  the  limit  that  was in effect before kernel 2.6.23.)  This change allows programs to have a much
+       larger argument and/or environment list.  For these architectures, the total size is limited to 1/4 of  the  allowed  stack
+       size.   (Imposing the 1/4-limit ensures that the new program always has some stack space.)  Additionally, the total size is
+       limited to 3/4 of the value of the kernel constant _STK_LIM (8 Mibibytes).  Since Linux 2.6.25, the kernel  also  places  a
+       floor  of 32 pages on this size limit, so that, even when RLIMIT_STACK is set very low, applications are guaranteed to have
+       at least as much argument and environment space as was provided by Linux 2.6.23 and earlier.  (This guarantee was not  pro‐
+       vided  in  Linux  2.6.23 and 2.6.24.)  Additionally, the limit per string is 32 pages (the kernel constant MAX_ARG_STRLEN),
+       and the maximum number of strings is 0x7FFFFFFF.
+
+RETURN VALUE
+       On success, execve() does not return, on error -1 is returned, and errno is set appropriately.
+
+ERRORS
+       E2BIG  The total number of bytes in the environment (envp) and argument list (argv) is too large.
+
+       EACCES Search permission is denied on a component of the path prefix of pathname or the name of a script interpreter.  (See
+              also path_resolution(7).)
+
+       EACCES The file or a script interpreter is not a regular file.
+
+       EACCES Execute permission is denied for the file or a script or ELF interpreter.
+
+       EACCES The filesystem is mounted noexec.
+
+       EAGAIN (since Linux 3.1)
+              Having changed its real UID using one of the set*uid() calls, the caller was—and is now still—above its RLIMIT_NPROC
+              resource limit (see setrlimit(2)).  For a more detailed explanation of this error, see NOTES.
+
+       EFAULT pathname or one of the pointers in the vectors argv or envp points outside your accessible address space.
+
+       EINVAL An ELF executable had more than one PT_INTERP segment (i.e., tried to name more than one interpreter).
+
+       EIO    An I/O error occurred.
+
+       EISDIR An ELF interpreter was a directory.
+
+       ELIBBAD
+              An ELF interpreter was not in a recognized format.
+
+       ELOOP  Too many symbolic links were encountered in resolving pathname or the name of a script or ELF interpreter.
+
+       ELOOP  The maximum recursion limit was reached during recursive script interpretation (see "Interpreter  scripts",  above).
+              Before Linux 3.8, the error produced for this case was ENOEXEC.
+
+       EMFILE The per-process limit on the number of open file descriptors has been reached.
+
+       ENAMETOOLONG
+              pathname is too long.
+
+       ENFILE The system-wide limit on the total number of open files has been reached.
+
+       ENOENT The file pathname or a script or ELF interpreter does not exist.
+
+       ENOEXEC
+              An  executable  is  not  in  a recognized format, is for the wrong architecture, or has some other format error that
+              means it cannot be executed.
+
+       ENOMEM Insufficient kernel memory was available.
+
+       ENOTDIR
+              A component of the path prefix of pathname or a script or ELF interpreter is not a directory.
+
+       EPERM  The filesystem is mounted nosuid, the user is not the superuser, and the file has the  set-user-ID  or  set-group-ID
+              bit set.
+
+       EPERM  The process is being traced, the user is not the superuser and the file has the set-user-ID or set-group-ID bit set.
+
+       EPERM  A  "capability-dumb"  applications would not obtain the full set of permitted capabilities granted by the executable
+              file.  See capabilities(7).
+
+       ETXTBSY
+              The specified executable was open for writing by one or more processes.
+
+CONFORMING TO
+       POSIX.1-2001, POSIX.1-2008, SVr4, 4.3BSD.  POSIX does not document the #! behavior, but it exists (with some variations) on
+       other UNIX systems.
+
+NOTES
+       One  sometimes  sees  execve()  (and the related functions described in exec(3)) described as "executing a new process" (or
+       similar).  This is a highly misleading description: there is no new process; many attributes of the calling process  remain
+       unchanged (in particular, its PID).  All that execve() does is arrange for an existing process (the calling process) to ex‐
+       ecute a new program.
+
+       Set-user-ID and set-group-ID processes can not be ptrace(2)d.
+
+       The result of mounting a filesystem nosuid varies across Linux kernel versions: some will refuse execution  of  set-user-ID
+       and  set-group-ID  executables when this would give the user powers they did not have already (and return EPERM), some will
+       just ignore the set-user-ID and set-group-ID bits and exec() successfully.
+
+       On Linux, argv and envp can be specified as NULL.  In both cases, this has the same effect as specifying the argument as  a
+       pointer  to a list containing a single null pointer.  Do not take advantage of this nonstandard and nonportable misfeature!
+       On many other UNIX systems, specifying argv as NULL will result in an error (EFAULT).  Some other UNIX  systems  treat  the
+       envp==NULL case the same as Linux.
+
+       POSIX.1  says  that values returned by sysconf(3) should be invariant over the lifetime of a process.  However, since Linux
+       2.6.23, if the RLIMIT_STACK resource limit changes, then the value reported by _SC_ARG_MAX will also change, to reflect the
+       fact that the limit on space for holding command-line arguments and environment variables has changed.
+
+       In  most  cases where execve() fails, control returns to the original executable image, and the caller of execve() can then
+       handle the error.  However, in (rare) cases (typically caused by resource exhaustion), failure may occur past the point  of
+       no  return:  the  original  executable  image has been torn down, but the new image could not be completely built.  In such
+       cases, the kernel kills the process with a SIGSEGV (SIGKILL until Linux 3.17) signal.
+
+   Interpreter scripts
+       The kernel imposes a maximum length on the text that follows the "#!" characters at the start of a script;  characters  be‐
+       yond the limit are ignored.  Before Linux 5.1, the limit is 127 characters.  Since Linux 5.1, the limit is 255 characters.
+
+       The  semantics  of  the  optional-arg  argument of an interpreter script vary across implementations.  On Linux, the entire
+       string following the interpreter name is passed as a single argument to the interpreter, and this string can include  white
+       space.  However, behavior differs on some other systems.  Some systems use the first white space to terminate optional-arg.
+       On some systems, an interpreter script can have multiple arguments, and white spaces in optional-arg are  used  to  delimit
+       the arguments.
+
+       Linux (like most other modern UNIX systems) ignores the set-user-ID and set-group-ID bits on scripts.
+
+   execve() and EAGAIN
+       A more detailed explanation of the EAGAIN error that can occur (since Linux 3.1) when calling execve() is as follows.
+
+       The  EAGAIN error can occur when a preceding call to setuid(2), setreuid(2), or setresuid(2) caused the real user ID of the
+       process to change, and that change caused the process to exceed its RLIMIT_NPROC resource limit (i.e., the number  of  pro‐
+       cesses  belonging to the new real UID exceeds the resource limit).  From Linux 2.6.0 to 3.0, this caused the set*uid() call
+       to fail.  (Prior to 2.6, the resource limit was not imposed on processes that changed their user IDs.)
+
+       Since Linux 3.1, the scenario just described no longer causes the set*uid() call to fail, because it too often led to secu‐
+       rity  holes  where buggy applications didn't check the return status and assumed that—if the caller had root privileges—the
+       call would always succeed.  Instead, the set*uid() calls now successfully change the real UID, but the kernel sets  an  in‐
+       ternal  flag, named PF_NPROC_EXCEEDED, to note that the RLIMIT_NPROC resource limit has been exceeded.  If the PF_NPROC_EX‐
+       CEEDED flag is set and the resource limit is still exceeded at the time of a subsequent execve() call, that call fails with
+       the  error  EAGAIN.  This kernel logic ensures that the RLIMIT_NPROC resource limit is still enforced for the common privi‐
+       leged daemon workflow—namely, fork(2) + set*uid() + execve().
+
+       If the resource limit was not still exceeded at the time of the execve() call (because other processes  belonging  to  this
+       real  UID  terminated  between  the  set*uid()  call and the execve() call), then the execve() call succeeds and the kernel
+       clears the PF_NPROC_EXCEEDED process flag.  The flag is also cleared if a subsequent call to fork(2) by this  process  suc‐
+       ceeds.
+
+   Historical
+       With  UNIX V6,  the argument list of an exec() call was ended by 0, while the argument list of main was ended by -1.  Thus,
+       this argument list was not directly usable in a further exec() call.  Since UNIX V7, both are NULL.
+
+EXAMPLES
+       The following program is designed to be execed by the second program below.  It just echoes its command-line arguments, one
+       per line.
+
+           /* myecho.c */
+
+           #include <stdio.h>
+           #include <stdlib.h>
+
+           int
+           main(int argc, char *argv[])
+           {
+               for (int j = 0; j < argc; j++)
+                   printf("argv[%d]: %s\n", j, argv[j]);
+
+               exit(EXIT_SUCCESS);
+           }
+
+       This program can be used to exec the program named in its command-line argument:
+
+           /* execve.c */
+
+           #include <stdio.h>
+           #include <stdlib.h>
+           #include <unistd.h>
+
+           int
+           main(int argc, char *argv[])
+           {
+               char *newargv[] = { NULL, "hello", "world", NULL };
+               char *newenviron[] = { NULL };
+
+               if (argc != 2) {
+                   fprintf(stderr, "Usage: %s <file-to-exec>\n", argv[0]);
+                   exit(EXIT_FAILURE);
+               }
+
+               newargv[0] = argv[1];
+
+               execve(argv[1], newargv, newenviron);
+               perror("execve");   /* execve() returns only on error */
+               exit(EXIT_FAILURE);
+           }
+
+       We can use the second program to exec the first as follows:
+
+           $ cc myecho.c -o myecho
+           $ cc execve.c -o execve
+           $ ./execve ./myecho
+           argv[0]: ./myecho
+           argv[1]: hello
+           argv[2]: world
+
+       We can also use these programs to demonstrate the use of a script interpreter.  To do this we create a script whose "inter‐
+       preter" is our myecho program:
+
+           $ cat > script
+           #!./myecho script-arg
+           ^D
+           $ chmod +x script
+
+       We can then use our program to exec the script:
+
+           $ ./execve ./script
+           argv[0]: ./myecho
+           argv[1]: script-arg
+           argv[2]: ./script
+           argv[3]: hello
+           argv[4]: world
+
+SEE ALSO
+       chmod(2), execveat(2), fork(2), get_robust_list(2), ptrace(2), exec(3), fexecve(3), getopt(3), system(3),  capabilities(7),
+       credentials(7), environ(7), path_resolution(7), ld.so(8)
+
+COLOPHON
+       This  page is part of release 5.10 of the Linux man-pages project.  A description of the project, information about report‐
+       ing bugs, and the latest version of this page, can be found at https://www.kernel.org/doc/man-pages/.
+
+Linux                                                       2020-08-13                                                   EXECVE(2)
+EXIT(1POSIX)                                         POSIX Programmer's Manual                                        EXIT(1POSIX)
+
+PROLOG
+       This  manual page is part of the POSIX Programmer's Manual.  The Linux implementation of this interface may differ (consult
+       the corresponding Linux manual page for details of Linux behavior), or the interface may not be implemented on Linux.
+
+NAME
+       exit — cause the shell to exit
+
+SYNOPSIS
+       exit [n]
+
+DESCRIPTION
+       The exit utility shall cause the shell to exit from its current execution environment with the exit status specified by the
+       unsigned  decimal integer n.  If the current execution environment is a subshell environment, the shell shall exit from the
+       subshell environment with the specified exit status and continue in the environment from which  that  subshell  environment
+       was  invoked; otherwise, the shell utility shall terminate with the specified exit status. If n is specified, but its value
+       is not between 0 and 255 inclusively, the exit status is undefined.
+
+       A trap on EXIT shall be executed before the shell terminates, except when the exit utility is invoked in that trap  itself,
+       in which case the shell shall exit immediately.
+
+OPTIONS
+       None.
+
+OPERANDS
+       See the DESCRIPTION.
+
+STDIN
+       Not used.
+
+INPUT FILES
+       None.
+
+ENVIRONMENT VARIABLES
+       None.
+
+ASYNCHRONOUS EVENTS
+       Default.
+
+STDOUT
+       Not used.
+
+STDERR
+       The standard error shall be used only for diagnostic messages.
+
+OUTPUT FILES
+       None.
+
+EXTENDED DESCRIPTION
+       None.
+
+EXIT STATUS
+       The  exit  status shall be n, if specified, except that the behavior is unspecified if n is not an unsigned decimal integer
+       or is greater than 255. Otherwise, the value shall be the exit value of the last command executed, or zero  if  no  command
+       was  executed. When exit is executed in a trap action, the last command is considered to be the command that executed imme‐
+       diately preceding the trap action.
+
+CONSEQUENCES OF ERRORS
+       Default.
+
+       The following sections are informative.
+
+APPLICATION USAGE
+       None.
+
+EXAMPLES
+       Exit with a true value:
+
+           exit 0
+
+       Exit with a false value:
+
+           exit 1
+
+       Propagate error handling from within a subshell:
+
+           (
+               command1 || exit 1
+               command2 || exit 1
+               exec command3
+           ) > outputfile || exit 1
+           echo "outputfile created successfully"
+
+RATIONALE
+       As explained in other sections, certain exit status values have been reserved for special uses and should be used by appli‐
+       cations only for those purposes:
+
+        126    A file to be executed was found, but it was not an executable utility.
+
+        127    A utility to be executed was not found.
+
+       >128    A command was interrupted by a signal.
+
+       The behavior of exit when given an invalid argument or unknown option is unspecified, because of differing practices in the
+       various historical implementations. A value larger than 255 might be truncated by the shell, and be unavailable even  to  a
+       parent  process that uses waitid() to get the full exit value. It is recommended that implementations that detect any usage
+       error should cause a non-zero exit status (or, if the shell is interactive and the error does not cause the shell to abort,
+       store a non-zero value in "$?"), but even this was not done historically in all shells.
+
+FUTURE DIRECTIONS
+       None.
+
+SEE ALSO
+       Section 2.14, Special Built-In Utilities
+
+COPYRIGHT
+       Portions  of  this text are reprinted and reproduced in electronic form from IEEE Std 1003.1-2017, Standard for Information
+       Technology -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 7, 2018 Edition,  Copy‐
+       right  (C) 2018 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group.  In the event of any dis‐
+       crepancy between this version and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Stan‐
+       dard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html .
+
+       Any  typographical or formatting errors that appear in this page are most likely to have been introduced during the conver‐
+       sion of the source files to man page  format.  To  report  such  errors,  see  https://www.kernel.org/doc/man-pages/report‐
+       ing_bugs.html .
+
+IEEE/The Open Group                                            2017                                                   EXIT(1POSIX)
+FORK(2)                                              Linux Programmer's Manual                                             FORK(2)
+
+NAME
+       fork - create a child process
+
+SYNOPSIS
+       #include <sys/types.h>
+       #include <unistd.h>
+
+       pid_t fork(void);
+
+DESCRIPTION
+       fork() creates a new process by duplicating the calling process.  The new process is referred to as the child process.  The
+       calling process is referred to as the parent process.
+
+       The child process and the parent process run in separate memory spaces.  At the time of fork() both memory spaces have  the
+       same  content.  Memory writes, file mappings (mmap(2)), and unmappings (munmap(2)) performed by one of the processes do not
+       affect the other.
+
+       The child process is an exact duplicate of the parent process except for the following points:
+
+       *  The child has its own unique process ID, and this PID does not match the ID of any existing process  group  (setpgid(2))
+          or session.
+
+       *  The child's parent process ID is the same as the parent's process ID.
+
+       *  The child does not inherit its parent's memory locks (mlock(2), mlockall(2)).
+
+       *  Process resource utilizations (getrusage(2)) and CPU time counters (times(2)) are reset to zero in the child.
+
+       *  The child's set of pending signals is initially empty (sigpending(2)).
+
+       *  The child does not inherit semaphore adjustments from its parent (semop(2)).
+
+       *  The  child does not inherit process-associated record locks from its parent (fcntl(2)).  (On the other hand, it does in‐
+          herit fcntl(2) open file description locks and flock(2) locks from its parent.)
+
+       *  The child does not inherit timers from its parent (setitimer(2), alarm(2), timer_create(2)).
+
+       *  The child does not inherit outstanding asynchronous I/O operations from its parent (aio_read(3), aio_write(3)), nor does
+          it inherit any asynchronous I/O contexts from its parent (see io_setup(2)).
+
+       The  process  attributes in the preceding list are all specified in POSIX.1.  The parent and child also differ with respect
+       to the following Linux-specific process attributes:
+
+       *  The child does not inherit directory change notifications (dnotify) from its parent (see the description of F_NOTIFY  in
+          fcntl(2)).
+
+       *  The prctl(2) PR_SET_PDEATHSIG setting is reset so that the child does not receive a signal when its parent terminates.
+
+       *  The  default  timer  slack value is set to the parent's current timer slack value.  See the description of PR_SET_TIMER‐
+          SLACK in prctl(2).
+
+       *  Memory mappings that have been marked with the madvise(2) MADV_DONTFORK flag are not inherited across a fork().
+
+       *  Memory in address ranges that have been marked with the madvise(2) MADV_WIPEONFORK flag is zeroed in the child  after  a
+          fork().  (The MADV_WIPEONFORK setting remains in place for those address ranges in the child.)
+
+       *  The termination signal of the child is always SIGCHLD (see clone(2)).
+
+       *  The port access permission bits set by ioperm(2) are not inherited by the child; the child must turn on any bits that it
+          requires using ioperm(2).
+
+       Note the following further points:
+
+       *  The child process is created with a single thread—the one that called fork().  The entire virtual address space  of  the
+          parent is replicated in the child, including the states of mutexes, condition variables, and other pthreads objects; the
+          use of pthread_atfork(3) may be helpful for dealing with problems that this can cause.
+
+       *  After a fork() in a multithreaded program, the  child  can  safely  call  only  async-signal-safe  functions  (see  sig‐
+          nal-safety(7)) until such time as it calls execve(2).
+
+       *  The child inherits copies of the parent's set of open file descriptors.  Each file descriptor in the child refers to the
+          same open file description (see open(2)) as the corresponding file descriptor in the parent.  This means  that  the  two
+          file  descriptors  share  open  file status flags, file offset, and signal-driven I/O attributes (see the description of
+          F_SETOWN and F_SETSIG in fcntl(2)).
+
+       *  The child inherits copies of the parent's set of open message queue descriptors (see  mq_overview(7)).   Each  file  de‐
+          scriptor in the child refers to the same open message queue description as the corresponding file descriptor in the par‐
+          ent.  This means that the two file descriptors share the same flags (mq_flags).
+
+       *  The child inherits copies of the parent's set of open directory streams (see opendir(3)).  POSIX.1 says that the  corre‐
+          sponding  directory  streams  in the parent and child may share the directory stream positioning; on Linux/glibc they do
+          not.
+
+RETURN VALUE
+       On success, the PID of the child process is returned in the parent, and 0 is returned in the child.  On failure, -1 is  re‐
+       turned in the parent, no child process is created, and errno is set appropriately.
+
+ERRORS
+       EAGAIN A system-imposed limit on the number of threads was encountered.  There are a number of limits that may trigger this
+              error:
+
+              *  the RLIMIT_NPROC soft resource limit (set via setrlimit(2)), which limits the number of processes and threads for
+                 a real user ID, was reached;
+
+              *  the  kernel's system-wide limit on the number of processes and threads, /proc/sys/kernel/threads-max, was reached
+                 (see proc(5));
+
+              *  the maximum number of PIDs, /proc/sys/kernel/pid_max, was reached (see proc(5)); or
+
+              *  the PID limit (pids.max) imposed by the cgroup "process number" (PIDs) controller was reached.
+
+       EAGAIN The caller is operating under the SCHED_DEADLINE scheduling policy and does not have  the  reset-on-fork  flag  set.
+              See sched(7).
+
+       ENOMEM fork() failed to allocate the necessary kernel structures because memory is tight.
+
+       ENOMEM An attempt was made to create a child process in a PID namespace whose "init" process has terminated.  See pid_name‐
+              spaces(7).
+
+       ENOSYS fork() is not supported on this platform (for example, hardware without a Memory-Management Unit).
+
+       ERESTARTNOINTR (since Linux 2.6.17)
+              System call was interrupted by a signal and will be restarted.  (This can be seen only during a trace.)
+
+CONFORMING TO
+       POSIX.1-2001, POSIX.1-2008, SVr4, 4.3BSD.
+
+NOTES
+       Under Linux, fork() is implemented using copy-on-write pages, so the only penalty that it incurs is the time and memory re‐
+       quired to duplicate the parent's page tables, and to create a unique task structure for the child.
+
+   C library/kernel differences
+       Since  version  2.3.3,  rather  than invoking the kernel's fork() system call, the glibc fork() wrapper that is provided as
+       part of the NPTL threading implementation invokes clone(2) with flags that provide the same effect as the traditional  sys‐
+       tem  call.  (A call to fork() is equivalent to a call to clone(2) specifying flags as just SIGCHLD.)  The glibc wrapper in‐
+       vokes any fork handlers that have been established using pthread_atfork(3).
+
+EXAMPLES
+       See pipe(2) and wait(2).
+
+SEE ALSO
+       clone(2), execve(2), exit(2), setrlimit(2), unshare(2), vfork(2), wait(2), daemon(3),  pthread_atfork(3),  capabilities(7),
+       credentials(7)
+
+COLOPHON
+       This  page is part of release 5.10 of the Linux man-pages project.  A description of the project, information about report‐
+       ing bugs, and the latest version of this page, can be found at https://www.kernel.org/doc/man-pages/.
+
+Linux                                                       2020-06-09                                                     FORK(2)
+PIPE(2)                                              Linux Programmer's Manual                                             PIPE(2)
+
+NAME
+       pipe, pipe2 - create pipe
+
+SYNOPSIS
+       #include <unistd.h>
+
+       /* On Alpha, IA-64, MIPS, SuperH, and SPARC/SPARC64; see NOTES */
+       struct fd_pair {
+           long fd[2];
+       };
+       struct fd_pair pipe();
+
+       /* On all other architectures */
+       int pipe(int pipefd[2]);
+
+       #define _GNU_SOURCE             /* See feature_test_macros(7) */
+       #include <fcntl.h>              /* Obtain O_* constant definitions */
+       #include <unistd.h>
+
+       int pipe2(int pipefd[2], int flags);
+
+DESCRIPTION
+       pipe()  creates a pipe, a unidirectional data channel that can be used for interprocess communication.  The array pipefd is
+       used to return two file descriptors referring to the ends of the pipe.  pipefd[0] refers to  the  read  end  of  the  pipe.
+       pipefd[1]  refers  to the write end of the pipe.  Data written to the write end of the pipe is buffered by the kernel until
+       it is read from the read end of the pipe.  For further details, see pipe(7).
+
+       If flags is 0, then pipe2() is the same as pipe().  The following values can be bitwise ORed in flags to  obtain  different
+       behavior:
+
+       O_CLOEXEC
+              Set  the  close-on-exec  (FD_CLOEXEC) flag on the two new file descriptors.  See the description of the same flag in
+              open(2) for reasons why this may be useful.
+
+       O_DIRECT (since Linux 3.4)
+              Create a pipe that performs I/O in "packet" mode.  Each write(2) to the pipe is dealt with as a separate packet, and
+              read(2)s from the pipe will read one packet at a time.  Note the following points:
+
+              *  Writes  of  greater than PIPE_BUF bytes (see pipe(7)) will be split into multiple packets.  The constant PIPE_BUF
+                 is defined in <limits.h>.
+
+              *  If a read(2) specifies a buffer size that is smaller than the next packet, then the requested number of bytes are
+                 read,  and the excess bytes in the packet are discarded.  Specifying a buffer size of PIPE_BUF will be sufficient
+                 to read the largest possible packets (see the previous point).
+
+              *  Zero-length packets are not supported.  (A read(2) that specifies a buffer size of zero is a no-op,  and  returns
+                 0.)
+
+              Older kernels that do not support this flag will indicate this via an EINVAL error.
+
+              Since Linux 4.5, it is possible to change the O_DIRECT setting of a pipe file descriptor using fcntl(2).
+
+       O_NONBLOCK
+              Set  the  O_NONBLOCK  file status flag on the open file descriptions referred to by the new file descriptors.  Using
+              this flag saves extra calls to fcntl(2) to achieve the same result.
+
+RETURN VALUE
+       On success, zero is returned.  On error, -1 is returned, errno is set appropriately, and pipefd is left unchanged.
+
+       On Linux (and other systems), pipe() does not modify pipefd on failure.  A  requirement  standardizing  this  behavior  was
+       added in POSIX.1-2008 TC2.  The Linux-specific pipe2() system call likewise does not modify pipefd on failure.
+
+ERRORS
+       EFAULT pipefd is not valid.
+
+       EINVAL (pipe2()) Invalid value in flags.
+
+       EMFILE The per-process limit on the number of open file descriptors has been reached.
+
+       ENFILE The system-wide limit on the total number of open files has been reached.
+
+       ENFILE The user hard limit on memory that can be allocated for pipes has been reached and the caller is not privileged; see
+              pipe(7).
+
+VERSIONS
+       pipe2() was added to Linux in version 2.6.27; glibc support is available starting with version 2.9.
+
+CONFORMING TO
+       pipe(): POSIX.1-2001, POSIX.1-2008.
+
+       pipe2() is Linux-specific.
+
+NOTES
+       The System V ABI on some architectures allows the use of more than one register for returning multiple values; several  ar‐
+       chitectures  (namely,  Alpha, IA-64, MIPS, SuperH, and SPARC/SPARC64) (ab)use this feature in order to implement the pipe()
+       system call in a functional manner: the call doesn't take any arguments and returns a pair of file descriptors as  the  re‐
+       turn  value  on  success.  The glibc pipe() wrapper function transparently deals with this.  See syscall(2) for information
+       regarding registers used for storing second file descriptor.
+
+EXAMPLES
+       The following program creates a pipe, and then fork(2)s to create a child process; the child inherits a  duplicate  set  of
+       file  descriptors that refer to the same pipe.  After the fork(2), each process closes the file descriptors that it doesn't
+       need for the pipe (see pipe(7)).  The parent then writes the string contained in the program's command-line argument to the
+       pipe, and the child reads this string a byte at a time from the pipe and echoes it on standard output.
+
+   Program source
+       #include <sys/types.h>
+       #include <sys/wait.h>
+       #include <stdio.h>
+       #include <stdlib.h>
+       #include <unistd.h>
+       #include <string.h>
+
+       int
+       main(int argc, char *argv[])
+       {
+           int pipefd[2];
+           pid_t cpid;
+           char buf;
+
+           if (argc != 2) {
+               fprintf(stderr, "Usage: %s <string>\n", argv[0]);
+               exit(EXIT_FAILURE);
+           }
+
+           if (pipe(pipefd) == -1) {
+               perror("pipe");
+               exit(EXIT_FAILURE);
+           }
+
+           cpid = fork();
+           if (cpid == -1) {
+               perror("fork");
+               exit(EXIT_FAILURE);
+           }
+
+           if (cpid == 0) {    /* Child reads from pipe */
+               close(pipefd[1]);          /* Close unused write end */
+
+               while (read(pipefd[0], &buf, 1) > 0)
+                   write(STDOUT_FILENO, &buf, 1);
+
+               write(STDOUT_FILENO, "\n", 1);
+               close(pipefd[0]);
+               _exit(EXIT_SUCCESS);
+
+           } else {            /* Parent writes argv[1] to pipe */
+               close(pipefd[0]);          /* Close unused read end */
+               write(pipefd[1], argv[1], strlen(argv[1]));
+               close(pipefd[1]);          /* Reader will see EOF */
+               wait(NULL);                /* Wait for child */
+               exit(EXIT_SUCCESS);
+           }
+       }
+
+SEE ALSO
+       fork(2), read(2), socketpair(2), splice(2), tee(2), vmsplice(2), write(2), popen(3), pipe(7)
+
+COLOPHON
+       This  page is part of release 5.10 of the Linux man-pages project.  A description of the project, information about report‐
+       ing bugs, and the latest version of this page, can be found at https://www.kernel.org/doc/man-pages/.
+
+Linux                                                       2020-06-09                                                     PIPE(2)
+UNLINK(1)                                                  User Commands                                                 UNLINK(1)
+
+NAME
+       unlink - call the unlink function to remove the specified file
+
+SYNOPSIS
+       unlink FILE
+       unlink OPTION
+
+DESCRIPTION
+       Call the unlink function to remove the specified FILE.
+
+       --help display this help and exit
+
+       --version
+              output version information and exit
+
+AUTHOR
+       Written by Michael Stone.
+
+REPORTING BUGS
+       GNU coreutils online help: <https://www.gnu.org/software/coreutils/>
+       Report any translation bugs to <https://translationproject.org/team/>
+
+COPYRIGHT
+       Copyright  ©  2020  Free  Software  Foundation,  Inc.   License  GPLv3+:  GNU  GPL  version 3 or later <https://gnu.org/li‐
+       censes/gpl.html>.
+       This is free software: you are free to change and redistribute it.  There is NO WARRANTY, to the extent permitted by law.
+
+SEE ALSO
+       unlink(2)
+
+       Full documentation <https://www.gnu.org/software/coreutils/unlink>
+       or available locally via: info '(coreutils) unlink invocation'
+
+GNU coreutils 8.32                                         February 2022                                                 UNLINK(1)
+WAIT(1POSIX)                                         POSIX Programmer's Manual                                        WAIT(1POSIX)
+
+PROLOG
+       This  manual page is part of the POSIX Programmer's Manual.  The Linux implementation of this interface may differ (consult
+       the corresponding Linux manual page for details of Linux behavior), or the interface may not be implemented on Linux.
+
+NAME
+       wait — await process completion
+
+SYNOPSIS
+       wait [pid...]
+
+DESCRIPTION
+       When an asynchronous list (see Section 2.9.3.1, Examples) is started by the shell, the process ID of the  last  command  in
+       each  element  of  the  asynchronous  list shall become known in the current shell execution environment; see Section 2.12,
+       Shell Execution Environment.
+
+       If the wait utility is invoked with no operands, it shall wait until all process IDs known to the invoking shell have  ter‐
+       minated and exit with a zero exit status.
+
+       If  one  or more pid operands are specified that represent known process IDs, the wait utility shall wait until all of them
+       have terminated. If one or more pid operands are specified that represent unknown process IDs, wait shall treat them as  if
+       they  were  known  process  IDs that exited with exit status 127. The exit status returned by the wait utility shall be the
+       exit status of the process requested by the last pid operand.
+
+       The known process IDs are applicable only for invocations of wait in the current shell execution environment.
+
+OPTIONS
+       None.
+
+OPERANDS
+       The following operand shall be supported:
+
+       pid       One of the following:
+
+                  1. The unsigned decimal integer process ID of a command, for which the utility is to wait for the termination.
+
+                  2. A job control job ID (see the Base Definitions volume of POSIX.1‐2017, Section 3.204,  Job  Control  Job  ID)
+                     that  identifies  a  background process group to be waited for. The job control job ID notation is applicable
+                     only for invocations of wait in the current shell execution environment; see Section  2.12,  Shell  Execution
+                     Environment.  The exit status of wait shall be determined by the last command in the pipeline.
+
+                     Note:     The  job  control  job  ID type of pid is only available on systems supporting the User Portability
+                               Utilities option.
+
+STDIN
+       Not used.
+
+INPUT FILES
+       None.
+
+ENVIRONMENT VARIABLES
+       The following environment variables shall affect the execution of wait:
+
+       LANG      Provide a default value for the internationalization variables that are unset or null. (See the Base  Definitions
+                 volume  of  POSIX.1‐2017,  Section 8.2, Internationalization Variables for the precedence of internationalization
+                 variables used to determine the values of locale categories.)
+
+       LC_ALL    If set to a non-empty string value, override the values of all the other internationalization variables.
+
+       LC_CTYPE  Determine the locale for the interpretation of sequences of bytes of text data as characters (for  example,  sin‐
+                 gle-byte as opposed to multi-byte characters in arguments).
+
+       LC_MESSAGES
+                 Determine  the  locale  that  should  be used to affect the format and contents of diagnostic messages written to
+                 standard error.
+
+       NLSPATH   Determine the location of message catalogs for the processing of LC_MESSAGES.
+
+ASYNCHRONOUS EVENTS
+       Default.
+
+STDOUT
+       Not used.
+
+STDERR
+       The standard error shall be used only for diagnostic messages.
+
+OUTPUT FILES
+       None.
+
+EXTENDED DESCRIPTION
+       None.
+
+EXIT STATUS
+       If one or more operands were specified, all of them have terminated or were not known by the invoking shell, and the status
+       of  the  last  operand specified is known, then the exit status of wait shall be the exit status information of the command
+       indicated by the last operand specified. If the process terminated abnormally due to the receipt of a signal, the exit sta‐
+       tus shall be greater than 128 and shall be distinct from the exit status generated by other signals, but the exact value is
+       unspecified. (See the kill -l option.) Otherwise, the wait utility shall exit with one of the following values:
+
+           0   The wait utility was invoked with no operands and all process IDs known by the invoking shell have terminated.
+
+       1‐126   The wait utility detected an error.
+
+         127   The command identified by the last pid operand specified is unknown.
+
+CONSEQUENCES OF ERRORS
+       Default.
+
+       The following sections are informative.
+
+APPLICATION USAGE
+       On most implementations, wait is a shell built-in. If it is called in a subshell or separate utility execution environment,
+       such as one of the following:
+
+           (wait)
+           nohup wait ...
+           find . -exec wait ... \;
+
+       it returns immediately because there are no known process IDs to wait for in those environments.
+
+       Historical  implementations  of interactive shells have discarded the exit status of terminated background processes before
+       each shell prompt. Therefore, the status of background processes was usually lost unless it terminated while wait was wait‐
+       ing for it. This could be a serious problem when a job that was expected to run for a long time actually terminated quickly
+       with a syntax or initialization error because the exit status returned was usually zero if the requested process ID was not
+       found.  This  volume  of POSIX.1‐2017 requires the implementation to keep the status of terminated jobs available until the
+       status is requested, so that scripts like:
+
+           j1&
+           p1=$!
+           j2&
+           wait $p1
+           echo Job 1 exited with status $?
+           wait $!
+           echo Job 2 exited with status $?
+
+       work without losing status on any of the jobs. The shell is allowed to discard the status of any process if  it  determines
+       that  the  application  cannot  get  the  process  ID for that process from the shell. It is also required to remember only
+       {CHILD_MAX} number of processes in this way. Since the only way to get the process ID from the shell is by  using  the  '!'
+       shell  parameter,  the shell is allowed to discard the status of an asynchronous list if "$!" was not referenced before an‐
+       other asynchronous list was started. (This means that the shell only has to keep the status of the last  asynchronous  list
+       started  if the application did not reference "$!".  If the implementation of the shell is smart enough to determine that a
+       reference to "$!" was not saved anywhere that the application can retrieve it later, it can use this  information  to  trim
+       the  list  of  saved information. Note also that a successful call to wait with no operands discards the exit status of all
+       asynchronous lists.)
+
+       If the exit status of wait is greater than 128, there is no way for the application to know if the waited-for  process  ex‐
+       ited  with  that value or was killed by a signal.  Since most utilities exit with small values, there is seldom any ambigu‐
+       ity. Even in the ambiguous cases, most applications just need to know that the asynchronous job failed; it does not  matter
+       whether it detected an error and failed or was killed and did not complete its job normally.
+
+EXAMPLES
+       Although  the exact value used when a process is terminated by a signal is unspecified, if it is known that a signal termi‐
+       nated a process, a script can still reliably determine which signal by using kill as shown by the following script:
+
+           sleep 1000&
+           pid=$!
+           kill -kill $pid
+           wait $pid
+           echo $pid was terminated by a SIG$(kill -l $?) signal.
+
+       If the following sequence of commands is run in less than 31 seconds:
+
+           sleep 257 | sleep 31 &
+           jobs -l %%
+
+       either of the following commands returns the exit status of the second sleep in the pipeline:
+
+           wait <pid of sleep 31>
+           wait %%
+
+RATIONALE
+       The description of wait does not refer to the waitpid() function from the System Interfaces volume of POSIX.1‐2017  because
+       that  would needlessly overspecify this interface. However, the wording means that wait is required to wait for an explicit
+       process when it is given an argument so that the status information of other processes is not consumed.  Historical  imple‐
+       mentations  use  the  wait()  function defined in the System Interfaces volume of POSIX.1‐2017 until wait() returns the re‐
+       quested process ID or finds that the requested process does not exist. Because this means that a shell script could not re‐
+       liably get the status of all background children if a second background job was ever started before the first job finished,
+       it is recommended that the wait utility use a method such as the functionality provided by the waitpid() function.
+
+       The ability to wait for multiple pid operands was adopted from the KornShell.
+
+       This new functionality was added because it is needed to determine the exit status of any asynchronous list accurately. The
+       only compatibility problem that this change creates is for a script like
+
+           while sleep 60 do
+               job& echo Job started $(date) as $!  done
+
+       which causes the shell to monitor all of the jobs started until the script terminates or runs out of memory. This would not
+       be a problem if the loop did not reference "$!" or if the script would occasionally wait for jobs it started.
+
+FUTURE DIRECTIONS
+       None.
+
+SEE ALSO
+       Chapter 2, Shell Command Language, kill, sh
+
+       The Base Definitions volume of POSIX.1‐2017, Section 3.204, Job Control Job ID, Chapter 8, Environment Variables
+
+       The System Interfaces volume of POSIX.1‐2017, wait()
+
+COPYRIGHT
+       Portions of this text are reprinted and reproduced in electronic form from IEEE Std 1003.1-2017, Standard  for  Information
+       Technology  -- Portable Operating System Interface (POSIX), The Open Group Base Specifications Issue 7, 2018 Edition, Copy‐
+       right (C) 2018 by the Institute of Electrical and Electronics Engineers, Inc and The Open Group.  In the event of any  dis‐
+       crepancy between this version and the original IEEE and The Open Group Standard, the original IEEE and The Open Group Stan‐
+       dard is the referee document. The original Standard can be obtained online at http://www.opengroup.org/unix/online.html .
+
+       Any typographical or formatting errors that appear in this page are most likely to have been introduced during the  conver‐
+       sion  of  the  source  files  to  man  page format. To report such errors, see https://www.kernel.org/doc/man-pages/report‐
+       ing_bugs.html .
+
+IEEE/The Open Group                                            2017                                                   WAIT(1POSIX)
+WAIT(2)                                              Linux Programmer's Manual                                             WAIT(2)
+
+NAME
+       wait, waitpid, waitid - wait for process to change state
+
+SYNOPSIS
+       #include <sys/types.h>
+       #include <sys/wait.h>
+
+       pid_t wait(int *wstatus);
+
+       pid_t waitpid(pid_t pid, int *wstatus, int options);
+
+       int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options);
+                       /* This is the glibc and POSIX interface; see
+                          NOTES for information on the raw system call. */
+
+   Feature Test Macro Requirements for glibc (see feature_test_macros(7)):
+
+       waitid():
+           Since glibc 2.26: _XOPEN_SOURCE >= 500 ||
+               _POSIX_C_SOURCE >= 200809L
+           Glibc 2.25 and earlier:
+               _XOPEN_SOURCE
+                   || /* Since glibc 2.12: */ _POSIX_C_SOURCE >= 200809L
+                   || /* Glibc versions <= 2.19: */ _BSD_SOURCE
+
+DESCRIPTION
+       All  of  these  system  calls  are used to wait for state changes in a child of the calling process, and obtain information
+       about the child whose state has changed.  A state change is considered to be: the child terminated; the child  was  stopped
+       by  a signal; or the child was resumed by a signal.  In the case of a terminated child, performing a wait allows the system
+       to release the resources associated with the child; if a wait is not performed, then the  terminated  child  remains  in  a
+       "zombie" state (see NOTES below).
+
+       If  a  child  has  already  changed state, then these calls return immediately.  Otherwise, they block until either a child
+       changes state or a signal handler interrupts the call (assuming that system calls are not automatically restarted using the
+       SA_RESTART  flag  of  sigaction(2)).   In the remainder of this page, a child whose state has changed and which has not yet
+       been waited upon by one of these system calls is termed waitable.
+
+   wait() and waitpid()
+       The wait() system call suspends execution of the calling thread until one of its children terminates.  The call wait(&wsta‐
+       tus) is equivalent to:
+
+           waitpid(-1, &wstatus, 0);
+
+       The  waitpid()  system  call  suspends  execution of the calling thread until a child specified by pid argument has changed
+       state.  By default, waitpid() waits only for terminated children, but this behavior is modifiable via the options argument,
+       as described below.
+
+       The value of pid can be:
+
+       < -1   meaning wait for any child process whose process group ID is equal to the absolute value of pid.
+
+       -1     meaning wait for any child process.
+
+       0      meaning wait for any child process whose process group ID is equal to that of the calling process at the time of the
+              call to waitpid().
+
+       > 0    meaning wait for the child whose process ID is equal to the value of pid.
+
+       The value of options is an OR of zero or more of the following constants:
+
+       WNOHANG
+              return immediately if no child has exited.
+
+       WUNTRACED
+              also return if a child has stopped (but not traced via ptrace(2)).  Status for traced children which have stopped is
+              provided even if this option is not specified.
+
+       WCONTINUED (since Linux 2.6.10)
+              also return if a stopped child has been resumed by delivery of SIGCONT.
+
+       (For Linux-only options, see below.)
+
+       If  wstatus  is not NULL, wait() and waitpid() store status information in the int to which it points.  This integer can be
+       inspected with the following macros (which take the integer itself as an argument, not a pointer  to  it,  as  is  done  in
+       wait() and waitpid()!):
+
+       WIFEXITED(wstatus)
+              returns true if the child terminated normally, that is, by calling exit(3) or _exit(2), or by returning from main().
+
+       WEXITSTATUS(wstatus)
+              returns the exit status of the child.  This consists of the least significant 8 bits of the status argument that the
+              child specified in a call to exit(3) or _exit(2) or as the argument for a return statement in  main().   This  macro
+              should be employed only if WIFEXITED returned true.
+
+       WIFSIGNALED(wstatus)
+              returns true if the child process was terminated by a signal.
+
+       WTERMSIG(wstatus)
+              returns  the number of the signal that caused the child process to terminate.  This macro should be employed only if
+              WIFSIGNALED returned true.
+
+       WCOREDUMP(wstatus)
+              returns true if the child produced a core dump (see core(5)).  This macro should be employed only if WIFSIGNALED re‐
+              turned true.
+
+              This  macro  is  not specified in POSIX.1-2001 and is not available on some UNIX implementations (e.g., AIX, SunOS).
+              Therefore, enclose its use inside #ifdef WCOREDUMP ... #endif.
+
+       WIFSTOPPED(wstatus)
+              returns true if the child process was stopped by delivery of a signal; this is possible only if the  call  was  done
+              using WUNTRACED or when the child is being traced (see ptrace(2)).
+
+       WSTOPSIG(wstatus)
+              returns  the  number of the signal which caused the child to stop.  This macro should be employed only if WIFSTOPPED
+              returned true.
+
+       WIFCONTINUED(wstatus)
+              (since Linux 2.6.10) returns true if the child process was resumed by delivery of SIGCONT.
+
+   waitid()
+       The waitid() system call (available since Linux 2.6.9) provides more precise control over which child state changes to wait
+       for.
+
+       The idtype and id arguments select the child(ren) to wait for, as follows:
+
+       idtype == P_PID
+              Wait for the child whose process ID matches id.
+
+       idtype == P_PIDFD (since Linux 5.4)
+              Wait  for the child referred to by the PID file descriptor specified in id.  (See pidfd_open(2) for further informa‐
+              tion on PID file descriptors.)
+
+       idtype == P_PGID
+              Wait for any child whose process group ID matches id.  Since Linux 5.4, if id is zero, then wait for any child  that
+              is in the same process group as the caller's process group at the time of the call.
+
+       idtype == P_ALL
+              Wait for any child; id is ignored.
+
+       The child state changes to wait for are specified by ORing one or more of the following flags in options:
+
+       WEXITED
+              Wait for children that have terminated.
+
+       WSTOPPED
+              Wait for children that have been stopped by delivery of a signal.
+
+       WCONTINUED
+              Wait for (previously stopped) children that have been resumed by delivery of SIGCONT.
+
+       The following flags may additionally be ORed in options:
+
+       WNOHANG
+              As for waitpid().
+
+       WNOWAIT
+              Leave the child in a waitable state; a later wait call can be used to again retrieve the child status information.
+
+       Upon successful return, waitid() fills in the following fields of the siginfo_t structure pointed to by infop:
+
+       si_pid The process ID of the child.
+
+       si_uid The real user ID of the child.  (This field is not set on most other implementations.)
+
+       si_signo
+              Always set to SIGCHLD.
+
+       si_status
+              Either  the exit status of the child, as given to _exit(2) (or exit(3)), or the signal that caused the child to ter‐
+              minate, stop, or continue.  The si_code field can be used to determine how to interpret this field.
+
+       si_code
+              Set to one of: CLD_EXITED (child called _exit(2)); CLD_KILLED (child killed by signal); CLD_DUMPED (child killed  by
+              signal, and dumped core); CLD_STOPPED (child stopped by signal); CLD_TRAPPED (traced child has trapped); or CLD_CON‐
+              TINUED (child continued by SIGCONT).
+
+       If WNOHANG was specified in options and there were no children in a waitable state, then waitid() returns 0 immediately and
+       the  state  of  the  siginfo_t structure pointed to by infop depends on the implementation.  To (portably) distinguish this
+       case from that where a child was in a waitable state, zero out the si_pid field before the call and  check  for  a  nonzero
+       value in this field after the call returns.
+
+       POSIX.1-2008  Technical  Corrigendum 1 (2013) adds the requirement that when WNOHANG is specified in options and there were
+       no children in a waitable state, then waitid() should zero out the si_pid and si_signo fields of the structure.   On  Linux
+       and  other implementations that adhere to this requirement, it is not necessary to zero out the si_pid field before calling
+       waitid().  However, not all implementations follow the POSIX.1 specification on this point.
+
+RETURN VALUE
+       wait(): on success, returns the process ID of the terminated child; on error, -1 is returned.
+
+       waitpid(): on success, returns the process ID of the child whose state has changed; if WNOHANG was  specified  and  one  or
+       more child(ren) specified by pid exist, but have not yet changed state, then 0 is returned.  On error, -1 is returned.
+
+       waitid():  returns 0 on success or if WNOHANG was specified and no child(ren) specified by id has yet changed state; on er‐
+       ror, -1 is returned.
+
+       Each of these calls sets errno to an appropriate value in the case of an error.
+
+ERRORS
+       ECHILD (for wait()) The calling process does not have any unwaited-for children.
+
+       ECHILD (for waitpid() or waitid()) The process specified by pid (waitpid()) or idtype and id (waitid()) does not  exist  or
+              is  not  a  child  of the calling process.  (This can happen for one's own child if the action for SIGCHLD is set to
+              SIG_IGN.  See also the Linux Notes section about threads.)
+
+       EINTR  WNOHANG was not set and an unblocked signal or a SIGCHLD was caught; see signal(7).
+
+       EINVAL The options argument was invalid.
+
+CONFORMING TO
+       SVr4, 4.3BSD, POSIX.1-2001.
+
+NOTES
+       A child that terminates, but has not been waited for becomes a "zombie".  The kernel maintains a minimal set of information
+       about  the  zombie process (PID, termination status, resource usage information) in order to allow the parent to later per‐
+       form a wait to obtain information about the child.  As long as a zombie is not removed from the system via a wait, it  will
+       consume  a  slot in the kernel process table, and if this table fills, it will not be possible to create further processes.
+       If a parent process terminates, then its "zombie" children (if any) are adopted by init(1), (or by the nearest  "subreaper"
+       process as defined through the use of the prctl(2) PR_SET_CHILD_SUBREAPER operation); init(1) automatically performs a wait
+       to remove the zombies.
+
+       POSIX.1-2001 specifies that if the disposition of SIGCHLD is set to SIG_IGN or the SA_NOCLDWAIT flag  is  set  for  SIGCHLD
+       (see  sigaction(2)),  then children that terminate do not become zombies and a call to wait() or waitpid() will block until
+       all children have terminated, and then fail with errno set to ECHILD.  (The original POSIX standard left  the  behavior  of
+       setting  SIGCHLD  to SIG_IGN unspecified.  Note that even though the default disposition of SIGCHLD is "ignore", explicitly
+       setting the disposition to SIG_IGN results in different treatment of zombie process children.)
+
+       Linux 2.6 conforms to the POSIX requirements.  However, Linux 2.4 (and earlier) does not: if a wait() or waitpid() call  is
+       made  while  SIGCHLD  is  being  ignored, the call behaves just as though SIGCHLD were not being ignored, that is, the call
+       blocks until the next child terminates and then returns the process ID and status of that child.
+
+   Linux notes
+       In the Linux kernel, a kernel-scheduled thread is not a distinct construct from a process.  Instead, a thread is  simply  a
+       process  that is created using the Linux-unique clone(2) system call; other routines such as the portable pthread_create(3)
+       call are implemented using clone(2).  Before Linux 2.4, a thread was just a special case of a process, and as a consequence
+       one  thread  could not wait on the children of another thread, even when the latter belongs to the same thread group.  How‐
+       ever, POSIX prescribes such functionality, and since Linux 2.4 a thread can, and by default will, wait on children of other
+       threads in the same thread group.
+
+       The  following  Linux-specific options are for use with children created using clone(2); they can also, since Linux 4.7, be
+       used with waitid():
+
+       __WCLONE
+              Wait for "clone" children only.  If omitted, then wait for "non-clone" children only.  (A "clone" child is one which
+              delivers  no  signal,  or  a  signal  other than SIGCHLD to its parent upon termination.)  This option is ignored if
+              __WALL is also specified.
+
+       __WALL (since Linux 2.4)
+              Wait for all children, regardless of type ("clone" or "non-clone").
+
+       __WNOTHREAD (since Linux 2.4)
+              Do not wait for children of other threads in the same thread group.  This was the default before Linux 2.4.
+
+       Since Linux 4.7, the __WALL flag is automatically implied if the child is being ptraced.
+
+   C library/kernel differences
+       wait() is actually a library function that (in glibc) is implemented as a call to wait4(2).
+
+       On some architectures, there is no waitpid() system call; instead, this interface is implemented via a  C  library  wrapper
+       function that calls wait4(2).
+
+       The  raw  waitid()  system  call takes a fifth argument, of type struct rusage *.  If this argument is non-NULL, then it is
+       used to return resource usage information about the child, in the same manner as wait4(2).  See getrusage(2) for details.
+
+BUGS
+       According to POSIX.1-2008, an application calling waitid() must ensure that infop points to a  siginfo_t  structure  (i.e.,
+       that  it  is a non-null pointer).  On Linux, if infop is NULL, waitid() succeeds, and returns the process ID of the waited-
+       for child.  Applications should avoid relying on this inconsistent, nonstandard, and unnecessary feature.
+
+EXAMPLES
+       The following program demonstrates the use of fork(2) and waitpid().  The program creates a child process.  If no  command-
+       line  argument  is supplied to the program, then the child suspends its execution using pause(2), to allow the user to send
+       signals to the child.  Otherwise, if a command-line argument is supplied, then the child exits immediately, using the inte‐
+       ger  supplied  on  the  command  line as the exit status.  The parent process executes a loop that monitors the child using
+       waitpid(), and uses the W*() macros described above to analyze the wait status value.
+
+       The following shell session demonstrates the use of the program:
+
+           $ ./a.out &
+           Child PID is 32360
+           [1] 32359
+           $ kill -STOP 32360
+           stopped by signal 19
+           $ kill -CONT 32360
+           continued
+           $ kill -TERM 32360
+           killed by signal 15
+           [1]+  Done                    ./a.out
+           $
+
+   Program source
+
+       #include <sys/wait.h>
+       #include <stdint.h>
+       #include <stdlib.h>
+       #include <unistd.h>
+       #include <stdio.h>
+
+       int
+       main(int argc, char *argv[])
+       {
+           pid_t cpid, w;
+           int wstatus;
+
+           cpid = fork();
+           if (cpid == -1) {
+               perror("fork");
+               exit(EXIT_FAILURE);
+           }
+
+           if (cpid == 0) {            /* Code executed by child */
+               printf("Child PID is %jd\n", (intmax_t) getpid());
+               if (argc == 1)
+                   pause();                    /* Wait for signals */
+               _exit(atoi(argv[1]));
+
+           } else {                    /* Code executed by parent */
+               do {
+                   w = waitpid(cpid, &wstatus, WUNTRACED | WCONTINUED);
+                   if (w == -1) {
+                       perror("waitpid");
+                       exit(EXIT_FAILURE);
+                   }
+
+                   if (WIFEXITED(wstatus)) {
+                       printf("exited, status=%d\n", WEXITSTATUS(wstatus));
+                   } else if (WIFSIGNALED(wstatus)) {
+                       printf("killed by signal %d\n", WTERMSIG(wstatus));
+                   } else if (WIFSTOPPED(wstatus)) {
+                       printf("stopped by signal %d\n", WSTOPSIG(wstatus));
+                   } else if (WIFCONTINUED(wstatus)) {
+                       printf("continued\n");
+                   }
+               } while (!WIFEXITED(wstatus) && !WIFSIGNALED(wstatus));
+               exit(EXIT_SUCCESS);
+           }
+       }
+
+SEE ALSO
+       _exit(2), clone(2), fork(2), kill(2), ptrace(2), sigaction(2), signal(2),  wait4(2),  pthread_create(3),  core(5),  creden‐
+       tials(7), signal(7)
+
+COLOPHON
+       This  page is part of release 5.10 of the Linux man-pages project.  A description of the project, information about report‐
+       ing bugs, and the latest version of this page, can be found at https://www.kernel.org/doc/man-pages/.
+
+Linux                                                       2020-11-01                                                     WAIT(2)

@@ -6,7 +6,7 @@
 /*   By: lmangall <lmangall@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 19:33:22 by lmangall          #+#    #+#             */
-/*   Updated: 2023/02/11 19:07:28 by lmangall         ###   ########.fr       */
+/*   Updated: 2023/02/12 15:53:22 by lmangall         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,12 +29,11 @@
 // Use the main syscall arguments and split to find the command
 // wait pid -1
 
-//        #include <sys/types.h>
-//        #include <sys/wait.h>
 
-//        pid_t wait(int *wstatus);
 
-//        pid_t waitpid(pid_t pid, int *wstatus, int options);
+//use strcmpare to find the path after PATH
+//use split
+//put commands in a struct (defined in makefile)
 
 int pipex(int argc, char *argv[])
 {
@@ -43,10 +42,11 @@ int pipex(int argc, char *argv[])
 	int 	READ_END;//should it be a STATIC INT ?
 	int		WRITE_END;//should it be a STATIC INT ?
 	int		fd[2];
+	int		wait_nbr;
 	pid_t	child;
 	// char *cmd1[] = {"cat", NULL, NULL};
 	// char *cmd2[] = {"wc", "-l", NULL};
-	char *cmd2[] = {"ls", NULL, NULL};
+	char *cmd1[] = {"ls", NULL, NULL};
 	char *cmd2[] = {"ls", NULL, NULL};
 
 
@@ -54,6 +54,7 @@ int pipex(int argc, char *argv[])
 	j = 0;
 	READ_END = 0;
 	WRITE_END = 1;
+	wait_nbr = 0;
 	child = -1;
 	printf("%i arguments\n", argc);
 	if(argc < 5)
@@ -67,14 +68,20 @@ int pipex(int argc, char *argv[])
 		// 		read
 		// 	}
 
-	pipe(fd);
+	// if (pipe (!fd))
+	// {
+	// 	fprintf (stderr, "Pipe failed.\n");
+	// }
+
+	// int	ft_strncmp(const char *s1, const char *s2, size_t n)
+
 	child = fork();
 	if(child == -1)//error
 	{
 		perror("error mark");
-		return(1);
 		close (fd [READ_END]);
 		close (fd [WRITE_END]);
+		return(1);
 	}
 	if(child == 0)//child
 	{
@@ -83,6 +90,8 @@ int pipex(int argc, char *argv[])
 		printf("STDOUT_FILENO %i\n\n", STDOUT_FILENO);
 		perror("Perror output 1: ");
 		// execve("/bin/cat", cmd1, NULL);
+		close (fd [WRITE_END]);//why do we have to close ?
+		//use fd[x] as an input for the command
 		execve("/bin/ls", cmd1, NULL);
 	}
 	if(child > 0)//parent
@@ -92,7 +101,9 @@ int pipex(int argc, char *argv[])
 		// 	exit_p(2);
 		// dup2(fd [READ_END], STDIN_FILENO);
 		// close(fd [WRITE_END]);
-		wait(NULL);
+		close (fd [READ_END]);//why do we have to close ?
+		wait_nbr = waitpid(-1, NULL, 0);
+		printf("wait nbr %i\n", wait_nbr);
 		printf("- parent here %i\n", child);
 		printf("STDIN_FILENO %i\n", STDIN_FILENO);
 		perror("Perror output 2: ");
@@ -103,19 +114,19 @@ int pipex(int argc, char *argv[])
 	return (0);
 }
 
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[], char *envp[]) 
 {
     pid_t   child = -1;
+	int i;
 
-child = fork();
-	if(child == -1)//error
-		perror("error XX");
-	else if(child > 0)//parent
+	i = 0;
+	while(envp[i] != NULL)
 	{
-		pipex(argc, argv);
-		perror("Error");
+		printf("%s", envp[i]);
+		i++;
 	}
-	wait(NULL);
+	pipex(argc, argv);
+
 
 	return(0);
 }

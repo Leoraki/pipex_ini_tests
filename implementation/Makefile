@@ -6,14 +6,15 @@
 #    By: lmangall <lmangall@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/02/08 19:33:40 by lmangall          #+#    #+#              #
-#    Updated: 2023/02/08 21:53:15 by lmangall         ###   ########.fr        #
+#    Updated: 2023/02/12 15:51:45 by lmangall         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 NAME = pipex
 
-SRCS =	pipex.c		\
-		exit.c		\
+SRCS =	pipex.c			\
+		exit.c			\
+		ft_strncmp.c	\
 
 CC = cc
 

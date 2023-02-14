@@ -6,7 +6,7 @@
 /*   By: lmangall <lmangall@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 19:33:22 by lmangall          #+#    #+#             */
-/*   Updated: 2023/02/12 15:53:22 by lmangall         ###   ########.fr       */
+/*   Updated: 2023/02/14 21:09:46 by lmangall         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,6 +39,7 @@ int pipex(int argc, char *argv[])
 {
 	int 	i;
 	int 	j;
+	int		read;
 	int 	READ_END;//should it be a STATIC INT ?
 	int		WRITE_END;//should it be a STATIC INT ?
 	int		fd[2];
@@ -52,6 +53,7 @@ int pipex(int argc, char *argv[])
 
 	i = 0;
 	j = 0;
+	read = 0;
 	READ_END = 0;
 	WRITE_END = 1;
 	wait_nbr = 0;
@@ -60,18 +62,18 @@ int pipex(int argc, char *argv[])
 	if(argc < 5)
 		exit_p(1);
 
-	// i = open(argv[2], O_RDONLY);
-	// 	if(i == -1)
-	// 		exit_p(2);
-		// else
-		// 	{
-		// 		read
-		// 	}
-
-	// if (pipe (!fd))
-	// {
-	// 	fprintf (stderr, "Pipe failed.\n");
-	// }
+	i = open(argv[2], O_RDONLY);
+	if(i == -1)
+			exit_p(2);
+		else
+			{
+				read = read(fd, buf, nbytes);
+			}
+	pipe(fd)
+	if (pipe (!fd))
+	{
+		fprintf (stderr, "Pipe failed.\n");
+	}
 
 	// int	ft_strncmp(const char *s1, const char *s2, size_t n)
 
@@ -86,11 +88,13 @@ int pipex(int argc, char *argv[])
 	if(child == 0)//child
 	{
 		// dup2(fd [WRITE_END], STDOUT_FILENO);//int dup2(int oldfd, int newfd);
+		// add protection if dup2() < 0
+
 		printf("- child here %i\n", child);
 		printf("STDOUT_FILENO %i\n\n", STDOUT_FILENO);
 		perror("Perror output 1: ");
 		// execve("/bin/cat", cmd1, NULL);
-		close (fd [WRITE_END]);//why do we have to close ?
+		close (fd [WRITE_END]);//if not closed the other end will  be waiting for an input to finish its process
 		//use fd[x] as an input for the command
 		execve("/bin/ls", cmd1, NULL);
 	}
